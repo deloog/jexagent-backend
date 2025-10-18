@@ -1,12 +1,11 @@
-from dotenv import load_dotenv
-load_dotenv()  # 加载环境变量
-
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from socketio import ASGIApp
-from fastapi import Request
-import time
+import socketio
+
+from fastapi import Request          # 新增
+import time                          # 新增
+
 
 # 创建FastAPI应用
 app = FastAPI(
@@ -15,15 +14,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# ===== 万能日志（临时调试）=====
-@app.middleware("http")
-async def log_every_request(request: Request, call_next):
-    start = time.time()
-    print(f"[DEBUG] {request.method} {request.url}")
-    response = await call_next(request)
-    print(f"[DEBUG] {request.method} {request.url}  status={response.status_code}  duration={time.time()-start:.3f}s")
-    return response
-# ===== 万能日志结束 =====
+
 
 # CORS配置
 app.add_middleware(
@@ -32,6 +23,14 @@ app.add_middleware(
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+)
+
+# 集成Socket.IO
+from app.services.socket_manager import socket_manager
+sio_asgi_app = socketio.ASGIApp(
+    socket_manager.sio,
+    other_asgi_app=app,
+    socketio_path='/socket.io'
 )
 
 @app.get("/")
@@ -59,22 +58,10 @@ app.include_router(ai_test.router, prefix="/api")
 app.include_router(workflow_test.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 
-# 集成Socket.IO（必须在路由注册之后）
-from app.services.socket_manager import socket_manager
-
-# 创建Socket.IO的ASGI子应用
-sio_app = ASGIApp(socket_manager.sio, socketio_path="/socket.io")
-
-# 用mount把/socket.io交给sio_app处理
-app.mount("/socket.io", sio_app)
-
-# 主ASGI应用 - 用于uvicorn启动
-main_asgi_app = app
-
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "app.main:main_asgi_app",  # ✅ 关键：运行包装后的应用
+        sio_asgi_app,  # 使用包装后的应用
         host="0.0.0.0",
         port=8000,
         reload=True

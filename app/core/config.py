@@ -6,6 +6,8 @@ class Settings(BaseSettings):
     APP_NAME: str = "JexAgent"
     ENVIRONMENT: str = "development"
     DEBUG: bool = True
+    DISABLE_QUOTA_CHECK: bool = False
+
     
     # Supabase配置
     SUPABASE_URL: str
@@ -26,7 +28,12 @@ class Settings(BaseSettings):
     REDIS_URL: str = "redis://localhost:6379"
     
     # CORS配置
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:5173", 
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173"
+    ]
     
     class Config:
         env_file = ".env"

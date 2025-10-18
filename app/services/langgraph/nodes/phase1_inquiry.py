@@ -155,7 +155,55 @@ async def phase1_process_answers(state: JexAgentState, answers: Dict[int, str]) 
     1. 理解用户的自然语言回答
     2. 提取结构化信息
     3. 整合到collected_info中
+    4. 处理跳过问询的情况（空的answers）
     """
+    
+    # 检查是否跳过问询（空的answers）
+    if not answers:
+        print(f"[DEBUG] 检测到跳过问询，answers为空")
+        # 跳过问询，直接返回状态，不调用AI处理
+        audit_entry = {
+            "step": len(state.get("audit_trail", [])),
+            "phase": "问询",
+            "actor": "用户",
+            "action": "跳过问询",
+            "input": "用户选择跳过问询",
+            "output": "使用现有信息继续处理",
+            "reasoning": "用户选择跳过问询，使用现有信息继续AI协作",
+            "tokens_used": 0,
+            "cost": 0.0
+        }
+        
+        return {
+            # === 状态机必需字段 ===
+            'task_id': state.get('task_id') or '',
+            'user_id': state.get('user_id') or '',
+            'scene': state.get('scene') or '',
+            'user_input': state.get('user_input') or '',
+            'need_inquiry': False,  # 不再需要问询
+            'provided_info': state.get('provided_info') or {},
+            'missing_info': state.get('missing_info') or [],  # 保留缺失信息，因为用户跳过了
+            'info_sufficiency': state.get('info_sufficiency') or 0.3,  # 保持原来的信息充足度
+            'collected_info': state.get('collected_info') or {},  # 没有收集新信息
+            'task_type': state.get('task_type') or 'topic-analysis',
+            'collaboration_mode': 'inquiry_skipped',
+            'ai_a_role': state.get('ai_a_role') or '',
+            'ai_b_role': state.get('ai_b_role') or '',
+            'ai_a_output': state.get('ai_a_output') or '',
+            'ai_b_output': state.get('ai_b_output') or '',
+            'debate_rounds': state.get('debate_rounds') or 0,
+            'current_round': state.get('current_round') or 0,
+            'max_rounds': state.get('max_rounds') or 3,
+            'should_stop': state.get('should_stop') or False,
+            'stop_reason': state.get('stop_reason') or '',
+            'final_output': state.get('final_output') or '',
+            'audit_trail': (state.get("audit_trail") or []) + [audit_entry],
+            'total_cost': state.get("total_cost") or 0.0,
+            'error': state.get('error') or '',
+
+            # === 业务数据 ===
+            'collected_info': state.get("collected_info") or {}
+        }
     
     ai_manager = get_ai_manager()
     

@@ -1,8 +1,6 @@
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from typing import Optional
-from uuid import UUID
-from datetime import datetime
 from app.models.user import UserResponse
 from app.core.database import get_supabase
 from datetime import datetime
@@ -20,12 +18,11 @@ async def get_current_user(
         if not credentials or not credentials.credentials:
             # 返回测试用户
             return UserResponse(
-                id=UUID("541db2dc-6d6d-46c0-ba95-262f06ad3e9b"),
+                id="test-user-id",
                 email="test@example.com",
                 name="测试用户",
                 avatar="",
                 subscription_tier="free",
-                tier="free",
                 daily_quota=10,
                 daily_used=0,
                 subscription_status="active",      # ← 补这行

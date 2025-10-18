@@ -30,3 +30,6 @@ redis==5.0.1
 # 测试
 pytest==7.4.4
 pytest-asyncio==0.23.3
+
+# Socket.IO
+python-socketio==5.10.0
